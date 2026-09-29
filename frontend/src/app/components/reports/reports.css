@@ -1,0 +1,142 @@
+/* =========================================================
+   REPORTS & ADMIT CARDS - component styles
+   (Global styles for .report-card, .template-option,
+   .report-preview etc. live in src/styles.css)
+   ========================================================= */
+
+.doc-controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+  margin-bottom: 8px;
+}
+
+.doc-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  margin-bottom: 16px;
+}
+
+.doc-meta .meta-item {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.doc-meta .meta-item strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.preview-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 12px;
+  font-size: 13px;
+}
+
+.preview-table th,
+.preview-table td {
+  border: 1px solid var(--border);
+  padding: 8px 10px;
+  text-align: left;
+}
+
+.preview-table th {
+  background: #f8fafc;
+  font-weight: 700;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: var(--muted);
+}
+
+.preview-signatures {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  margin-top: 48px;
+}
+
+.preview-signatures .sig {
+  text-align: center;
+  min-width: 160px;
+}
+
+.preview-signatures .sig .line {
+  border-top: 1px solid var(--ink);
+  margin-bottom: 6px;
+}
+
+.preview-signatures .sig .label {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.customize-note {
+  background: var(--info-bg);
+  border: 1px solid #bae6fd;
+  color: #075985;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+
+/* ================= MODE TABS ================= */
+.mode-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.mode-tab {
+  padding: 10px 22px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: #fff;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.mode-tab:hover { background: var(--brand-50); }
+.mode-tab.active { background: var(--brand); color: #fff; border-color: var(--brand); }
+
+/* ================= TEMPLATE DESC ================= */
+.template-desc {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+/* ================= COLOR INPUT ================= */
+.color-input {
+  height: 42px;
+  padding: 4px;
+  cursor: pointer;
+}
+
+/* ================= TOGGLES ================= */
+.toggles-field { display: flex; flex-direction: column; gap: 8px; }
+.toggle-row { display: flex; flex-wrap: wrap; gap: 14px; }
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text);
+  cursor: pointer;
+  font-weight: 500;
+}
+.toggle input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--brand);
+}
+
+/* ================= PRINT ================= */
+@media print {
+  .print-hide { display: none !important; }
+  .report-preview { border: none; padding: 0; }
+  body { background: #fff; }
+}

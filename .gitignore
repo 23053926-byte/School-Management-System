@@ -1,0 +1,17 @@
+# Dependencies
+node_modules/
+
+# Angular
+.angular/
+dist/
+
+# Environment / secrets
+backend/.env
+.env
+
+# Runtime uploads
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# Logs
+*.log

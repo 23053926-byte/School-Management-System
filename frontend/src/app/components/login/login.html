@@ -1,0 +1,84 @@
+<div class="login-page">
+
+  <!-- ================= BRANDING PANEL ================= -->
+  <div class="login-brand">
+    <div class="brand-badge">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10 12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1.7 2.7 3 6 3s6-1.3 6-3v-5"/><path d="M22 10v6"/></svg>
+    </div>
+    <h1>EduCampus</h1>
+    <p class="brand-tagline">The modern portal for managing students, faculty, attendance and results — all in one place.</p>
+    <ul class="brand-features">
+      <li>Student &amp; faculty management</li>
+      <li>Attendance &amp; marks tracking</li>
+      <li>Real-time results &amp; progress</li>
+    </ul>
+    <div class="brand-footer">© 2026 EduCampus · School Management System</div>
+  </div>
+
+  <!-- ================= LOGIN FORM PANEL ================= -->
+  <div class="login-form-panel">
+
+    <div class="login-card-head">
+      <div class="form-badge">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="5"/><path d="M5 22a8.5 8.5 0 0 1 10 8"/></svg>
+      </div>
+      <h2>Welcome back</h2>
+      <p>Sign in to continue to your dashboard.</p>
+    </div>
+
+    <form (ngSubmit)="login()" class="login-form">
+
+      @if (errorMessage) {
+        <div class="alert alert-error">{{ errorMessage }}</div>
+      }
+
+      <div class="form-field">
+        <label class="form-label" for="email">Email address</label>
+        <input
+          class="form-input"
+          id="email"
+          name="email"
+          type="email"
+          [(ngModel)]="email"
+          placeholder="admin@school.edu"
+          autocomplete="email"
+          required
+        />
+      </div>
+
+      <div class="form-field">
+        <label class="form-label" for="password">Password</label>
+        <input
+          class="form-input"
+          id="password"
+          name="password"
+          type="password"
+          [(ngModel)]="password"
+          placeholder="Enter your password"
+          autocomplete="current-password"
+          required
+        />
+      </div>
+
+      <button
+        type="submit"
+        class="btn btn-primary login-submit"
+        [disabled]="isLoading"
+      >
+        @if (isLoading) {
+          <span class="spinner-sm"></span>
+          Signing in...
+        } @else {
+          Sign in
+        }
+      </button>
+
+    </form>
+
+    <div class="login-help">
+      Admin: <strong>admin@school.edu</strong> · Faculty: <strong>faculty@school.edu</strong>
+    </div>
+
+  </div>
+
+</div>

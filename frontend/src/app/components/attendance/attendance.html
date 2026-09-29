@@ -1,0 +1,384 @@
+<div class="page">
+
+  <div class="flex-between" style="margin-bottom: 6px;">
+    <div>
+      <h1 class="page-title">Attendance</h1>
+      <p class="page-subtitle">Record and review daily attendance</p>
+    </div>
+    <div style="display: flex; gap: 10px;">
+      <button class="btn btn-outline" (click)="switchTab('yolo')" title="AI Face Detection">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="1"/><path d="M19 12a7 7 0 1 1-14 0 7 7 0 0 1 14 0"/></svg>
+        YOLO AI
+      </button>
+      <button class="btn btn-outline" (click)="switchTab('manual')">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2v4"/><line x1="8" y1="2v4"/><line x1="12" y1="11" x2="12" y2="11"/><line x1="12" y1="15" x2="12" y2="15"/><circle cx="12" cy="10" r="1"/></svg>
+        Bulk Mark
+      </button>
+      <button class="btn btn-primary" (click)="openMark()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Mark Attendance
+      </button>
+    </div>
+  </div>
+
+  @if (successMessage) { <div class="alert alert-success">{{ successMessage }}</div> }
+  @if (errorMessage) { <div class="alert alert-error">{{ errorMessage }}</div> }
+
+  <!-- ================= YOLO AI TAB ================= -->
+  @if (activeTab === 'yolo') {
+    <div class="card">
+      <div class="card-header">
+        <h3>🤖 YOLO AI Face Detection Attendance</h3>
+      </div>
+
+      @if (yoloDetectError) {
+        <div class="alert alert-error">{{ yoloDetectError }}</div>
+      }
+
+      <!-- Upload/Webcam Selection -->
+      @if (yoloMode === 'upload') {
+        <div class="yolo-upload-section">
+          <div class="row">
+            <div class="form-group">
+              <label>Department <span>*</span></label>
+              <select [(ngModel)]="yoloDepartment">
+                <option value="">Select Department</option>
+                <option *ngFor="let dept of departments" [value]="dept">{{ dept }}</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Semester <span>*</span></label>
+              <select [(ngModel)]="yoloSemester">
+                <option value="">Select Semester</option>
+                <option *ngFor="let sem of semesters" [value]="sem">{{ sem }}</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Subject <span>*</span></label>
+              <select [(ngModel)]="yoloSubject">
+                <option value="">Select Subject</option>
+                <option *ngFor="let subj of subjects" [value]="subj._id">{{ subj.subjectName }}</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Faculty <span>*</span></label>
+              <select [(ngModel)]="yoloFaculty">
+                <option value="">Select Faculty</option>
+                <option *ngFor="let fac of faculties" [value]="fac._id">{{ fac.name }}</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Date <span>*</span></label>
+              <input type="date" [(ngModel)]="yoloDate" />
+            </div>
+          </div>
+
+          <div class="button-group">
+            <button class="btn btn-outline" (click)="startWebcam()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+              Webcam
+            </button>
+            <label class="btn btn-outline">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+              Upload Image
+              <input type="file" (change)="onYoloFileSelected($event)" accept=".jpg,.jpeg,.png" style="display: none;" />
+            </label>
+          </div>
+
+          @if (yoloImagePreview) {
+            <div class="image-preview-small">
+              <img [src]="yoloImagePreview" alt="Selected image" />
+              <button type="button" class="btn btn-sm btn-outline" (click)="clearYoloImage()">Clear</button>
+              <button type="button" class="btn btn-sm btn-primary" (click)="detectYoloFaces()" [disabled]="yoloDetecting">
+                @if (yoloDetecting) { <span class="spinner-sm"></span> Detecting... } @else { Detect Faces }
+              </button>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- Webcam Capture -->
+      @if (yoloMode === 'webcam') {
+        <div class="webcam-section">
+          <video #video autoplay playsinline></video>
+          <div class="button-group">
+            <button class="btn btn-primary" (click)="captureSnapshot()">📸 Capture</button>
+            <button class="btn btn-outline" (click)="stopWebcam()">Cancel</button>
+          </div>
+          <canvas #canvas style="display: none;"></canvas>
+        </div>
+      }
+
+      <!-- Detection Results -->
+      @if (yoloMode === 'detect') {
+        <div class="detection-loading">
+          <div class="spinner"></div>
+          <p>Processing faces...</p>
+        </div>
+      }
+
+      <!-- Confirm & Mark -->
+      @if (yoloMode === 'confirm') {
+        <div class="yolo-confirm-section">
+          <div class="canvas-container">
+            <canvas #canvas class="detection-canvas"></canvas>
+          </div>
+
+          <div class="detected-students-grid">
+            <h4>Detected Students ({{ yoloDetectedStudents.length }})</h4>
+            @if (yoloDetectedStudents.length === 0) {
+              <p class="text-muted">No students detected with sufficient confidence.</p>
+            } @else {
+              <div class="students-grid">
+                @for (student of yoloDetectedStudents; track student._id; let i = $index) {
+                  <div class="student-card">
+                    <div class="student-info">
+                      <strong>{{ student.name }}</strong>
+                      <small>{{ student.studentId }}</small>
+                      <span class="confidence-badge">{{ (student.similarity * 100) | number:'1.0-0' }}%</span>
+                    </div>
+                    <div class="status-toggle">
+                      <button
+                        [class.active]="student.status === 'Present'"
+                        (click)="toggleStudentStatus(i)"
+                        class="status-btn"
+                      >
+                        {{ student.status }}
+                      </button>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+
+          <div class="button-group">
+            <button class="btn btn-outline" (click)="clearYoloImage()">Back</button>
+            <button class="btn btn-primary" (click)="confirmYoloAttendance()" [disabled]="yoloConfirming || yoloDetectedStudents.length === 0">
+              @if (yoloConfirming) { <span class="spinner-sm"></span> Marking... } @else { ✓ Mark Attendance }
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- ================= MANUAL BULK TAB ================= -->
+  @if (activeTab === 'manual') {
+    @if (showBulkMode) {
+      <!-- Bulk Mode - Show Form + History Table -->
+      <div class="report-card">
+        <div class="report-header-bar">
+          <h2>Bulk Attendance — Mark multiple students</h2>
+          <button class="btn btn-ghost btn-sm" (click)="exitBulkMode()">✕ Close</button>
+        </div>
+        @if (bulkSuccess) { <div class="alert alert-success">{{ bulkSuccess }}</div> }
+        @if (bulkError) { <div class="alert alert-error">{{ bulkError }}</div> }
+
+        <div class="form-grid-3">
+          <div class="form-field">
+            <label class="form-label">Subject <span class="req">*</span></label>
+            <select class="form-select" [(ngModel)]="bulkSubject" (ngModelChange)="loadBulkStudents()">
+              <option value="">Select subject</option>
+              @for (s of subjects; track s._id) {
+                <option [value]="s._id">{{ s.subjectCode }} — {{ s.subjectName }} ({{ s.department }} / {{ s.semester }})</option>
+              }
+            </select>
+          </div>
+          <div class="form-field">
+            <label class="form-label">Date</label>
+            <input class="form-input" type="date" [(ngModel)]="bulkDate" />
+          </div>
+          <div class="form-field">
+            <label class="form-label">Faculty</label>
+            <select class="form-select" [(ngModel)]="bulkFaculty">
+              <option value="">Select faculty</option>
+              @for (f of faculties; track f._id) {
+                <option [value]="f._id">{{ f.name }}</option>
+              }
+            </select>
+          </div>
+        </div>
+
+        @if (bulkStudents.length > 0) {
+          <div style="margin: 16px 0;">
+            <div style="display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap;">
+              <button class="btn btn-sm" (click)="setAllStatus('Present')">All Present</button>
+              <button class="btn btn-sm btn-outline" (click)="setAllStatus('Absent')">All Absent</button>
+              <button class="btn btn-sm" (click)="setAllStatus('Late')">All Late</button>
+            </div>
+            <div class="attendance-grid">
+              @for (s of bulkStudents; track s.studentId) {
+                <div class="attendance-row">
+                  <div>
+                    <div class="name-cell">{{ s.studentName }}</div>
+                    <div class="muted-text">{{ s.studentCode }}</div>
+                  </div>
+                  <select
+                    class="status-select"
+                    [class.status-pres]="s.status === 'Present'"
+                    [class.status-abs]="s.status === 'Absent'"
+                    [class.status-late]="s.status === 'Late'"
+                    [(ngModel)]="s.status"
+                  >
+                    <option value=""> — Select — </option>
+                    <option value="Present">PR</option>
+                    <option value="Absent">Ab</option>
+                    <option value="Late">Late</option>
+                  </select>
+                </div>
+              }
+            </div>
+          </div>
+
+          <div class="report-actions">
+            <button class="btn btn-outline" (click)="exitBulkMode()">Cancel</button>
+            <button class="btn btn-success" (click)="saveBulkAttendance()" [disabled]="bulkSaving">
+              @if (bulkSaving) { <span class="spinner-sm"></span> Saving... } @else { Save Attendance }
+            </button>
+          </div>
+        } @else if (bulkSubject && !bulkLoading) {
+          <div class="empty-state">
+            <span class="emoji">📭</span>
+            <h3>No students found</h3>
+            <p>No students match the selected subject's department and semester.</p>
+          </div>
+        }
+      </div>
+    } @else {
+      <!-- List Mode - Show all records -->
+      @if (loading) {
+        <div class="loader-wrap"><div class="spinner"></div></div>
+      } @else if (records.length > 0) {
+        <div class="card">
+          <div class="table-shell">
+            <table class="modern-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Student</th>
+                  <th>Subject</th>
+                  <th>Faculty</th>
+                  <th>Status</th>
+                  <th style="text-align:right;">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (r of records; track r._id) {
+                  <tr>
+                    <td class="name-cell">{{ r.date | date: 'MMM d, y' }}</td>
+                    <td>
+                      <div class="name-cell">{{ r.student?.name }}</div>
+                      <div class="muted-text">{{ r.student?.studentId }}</div>
+                    </td>
+                    <td>
+                      <div class="name-cell">{{ r.subject?.subjectName }}</div>
+                      <div class="muted-text">{{ r.subject?.subjectCode }}</div>
+                    </td>
+                    <td>{{ r.faculty?.name }}</td>
+                    <td><span class="badge {{ statusBadge(r.status) }}">{{ r.status }}</span></td>
+                    <td>
+                      <div class="row-actions">
+                        <button class="icon-btn" title="Edit" (click)="openEdit(r)">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                          <span>Edit</span>
+                        </button>
+                        <button class="icon-btn icon-btn-danger" title="Delete" (click)="deleteRecord(r._id)">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                          <span>Delete</span>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          <div class="pagination">
+            <span class="muted-text">Showing {{ records.length }} of {{ total }} records</span>
+            <div class="paging">
+              <button class="btn btn-outline btn-sm" [disabled]="currentPage === 1" (click)="previousPage()">‹ Prev</button>
+              <span class="muted-text">Page <strong>{{ currentPage }}</strong> of <strong>{{ totalPages }}</strong></span>
+              <button class="btn btn-outline btn-sm" [disabled]="currentPage === totalPages" (click)="nextPage()">Next ›</button>
+            </div>
+          </div>
+        </div>
+      } @else {
+        <div class="card"><div class="empty-state">
+          <span class="emoji">📅</span>
+          <h3>No attendance records</h3>
+          <p>Click "Mark Attendance" to record student attendance.</p>
+        </div></div>
+      }
+    }
+  }
+
+</div>
+
+<!-- ================= MARK ATTENDANCE MODAL ================= -->
+@if (showModal) {
+  <div class="modal-overlay" (click)="closeModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3 class="modal-title">{{ editingId ? 'Update Attendance' : 'Mark Attendance' }}</h3>
+        <button class="modal-close" (click)="closeModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        @if (formError) { <div class="alert alert-error">{{ formError }}</div> }
+        <form class="form-grid" (ngSubmit)="save()">
+          <div class="form-field">
+            <label class="form-label">Student <span class="req">*</span></label>
+            <select class="form-select" [(ngModel)]="form.student" name="student">
+              <option value="">Select student</option>
+              @for (s of students; track s._id) {
+                <option [value]="s._id">{{ s.studentId }} — {{ s.name }}</option>
+              }
+            </select>
+          </div>
+          <div class="form-field">
+            <label class="form-label">Subject <span class="req">*</span></label>
+            <select class="form-select" [(ngModel)]="form.subject" name="subject">
+              <option value="">Select subject</option>
+              @for (sub of subjects; track sub._id) {
+                <option [value]="sub._id">{{ sub.subjectCode }} — {{ sub.subjectName }}</option>
+              }
+            </select>
+          </div>
+          <div class="form-field">
+            <label class="form-label">Faculty <span class="req">*</span></label>
+            <select class="form-select" [(ngModel)]="form.faculty" name="faculty">
+              <option value="">Select faculty</option>
+              @for (f of faculties; track f._id) {
+                <option [value]="f._id">{{ f.name }}</option>
+              }
+            </select>
+          </div>
+          <div class="form-grid-2">
+            <div class="form-field">
+              <label class="form-label">Date <span class="req">*</span></label>
+              <input class="form-input" type="date" [(ngModel)]="form.date" name="date" />
+            </div>
+            <div class="form-field">
+              <label class="form-label">Status <span class="req">*</span></label>
+              <select class="form-select" [(ngModel)]="form.status" name="status">
+                <option value="Present">Present</option>
+                <option value="Absent">Absent</option>
+                <option value="Late">Late</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-field">
+            <label class="form-label">Remarks</label>
+            <input class="form-input" [(ngModel)]="form.remarks" name="remarks" placeholder="Optional note" />
+          </div>
+          <div class="form-actions">
+            <button type="button" class="btn btn-outline" (click)="closeModal()">Cancel</button>
+            <button type="submit" class="btn btn-primary" [disabled]="saving">
+              @if (saving) { <span class="spinner-sm"></span> Saving... } @else { Mark Attendance }
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+}

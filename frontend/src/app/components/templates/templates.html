@@ -1,0 +1,230 @@
+<div class="page">
+
+  <div class="flex-between" style="margin-bottom: 6px;">
+    <div>
+      <h1 class="page-title">Templates</h1>
+      <p class="page-subtitle">Create and manage report and admit card templates</p>
+    </div>
+    <button class="btn btn-primary" (click)="openAdd()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Create Template
+    </button>
+  </div>
+
+  @if (successMessage) { <div class="alert alert-success">{{ successMessage }}</div> }
+  @if (errorMessage) { <div class="alert alert-error">{{ errorMessage }}</div> }
+
+  <div class="filter-bar">
+    <button class="btn" [class.active]="filteredType === ''" (click)="filterByType('')">All Templates</button>
+    <button class="btn" [class.active]="filteredType === 'report'" (click)="filterByType('report')">📄 Report Cards</button>
+    <button class="btn" [class.active]="filteredType === 'admit'" (click)="filterByType('admit')">🎫 Admit Cards</button>
+  </div>
+
+  @if (loading) {
+    <div class="loader-wrap"><div class="spinner"></div></div>
+  } @else if (templates.length > 0) {
+    <div class="card">
+      <div class="table-shell">
+        <table class="modern-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Type</th>
+              <th>Description</th>
+              <th>Default</th>
+              <th style="text-align:right;">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (t of templates; track t._id) {
+              <tr>
+                <td class="name-cell">{{ t.name }}</td>
+                <td>
+                  <span class="badge" [class.badge-info]="t.type === 'report'" [class.badge-success]="t.type === 'admit'">
+                    {{ t.type === 'report' ? '📄 Report' : '🎫 Admit' }}
+                  </span>
+                </td>
+                <td class="muted-text">{{ t.description || '—' }}</td>
+                <td>
+                  @if (t.isDefault) {
+                    <span class="badge badge-success">✓ Default</span>
+                  } @else {
+                    <span class="muted-text">—</span>
+                  }
+                </td>
+                <td>
+                  <div class="row-actions">
+                    <button class="icon-btn" title="Preview" (click)="openPreview(t)">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                      <span>Preview</span>
+                    </button>
+                    <button class="icon-btn" title="Edit" (click)="openEdit(t)">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                      <span>Edit</span>
+                    </button>
+                    <button class="icon-btn" title="Duplicate" (click)="duplicate(t)">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 2H4a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2h-1"/><rect x="7" y="2" width="14" height="14" rx="2" ry="2"/></svg>
+                      <span>Copy</span>
+                    </button>
+                    <button class="icon-btn icon-btn-danger" title="Delete" (click)="confirmDelete(t)">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                      <span>Delete</span>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <div class="pagination">
+        <span class="muted-text">Showing {{ templates.length }} of {{ total }} templates</span>
+        <div class="paging">
+          <button class="btn btn-outline btn-sm" [disabled]="currentPage === 1" (click)="previousPage()">‹ Prev</button>
+          <span class="muted-text">Page <strong>{{ currentPage }}</strong> of <strong>{{ totalPages }}</strong></span>
+          <button class="btn btn-outline btn-sm" [disabled]="currentPage === totalPages" (click)="nextPage()">Next ›</button>
+        </div>
+      </div>
+    </div>
+  } @else {
+    <div class="card"><div class="empty-state">
+      <span class="emoji">🎨</span>
+      <h3>No templates yet</h3>
+      <p>Create your first template to get started.</p>
+    </div></div>
+  }
+
+</div>
+
+<!-- ================= TEMPLATE MODAL ================= -->
+@if (showModal) {
+  <div class="modal-overlay" (click)="closeModal()">
+    <div class="modal" (click)="$event.stopPropagation()" style="max-width: 600px;">
+      <div class="modal-header">
+        <h3 class="modal-title">{{ editingId ? 'Edit Template' : 'Create Template' }}</h3>
+        <button class="modal-close" (click)="closeModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        @if (formError) { <div class="alert alert-error">{{ formError }}</div> }
+        <form class="form-grid" (ngSubmit)="save()">
+          <div class="form-field">
+            <label class="form-label">Template Name <span class="req">*</span></label>
+            <input class="form-input" [(ngModel)]="form.name" name="name" placeholder="e.g., Blue Report Card" />
+          </div>
+          <div class="form-field">
+            <label class="form-label">Type <span class="req">*</span></label>
+            <select class="form-select" [(ngModel)]="form.type" name="type">
+              @for (type of templateTypes; track type.value) {
+                <option [value]="type.value">{{ type.label }}</option>
+              }
+            </select>
+          </div>
+          <div class="form-field">
+            <label class="form-label">Description</label>
+            <input class="form-input" [(ngModel)]="form.description" name="description" placeholder="Optional description" />
+          </div>
+
+          <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border);">
+            <h4 style="margin: 0 0 12px; font-size: 14px; font-weight: 600;">Customization</h4>
+            <div class="form-grid-2">
+              <div class="form-field">
+                <label class="form-label">School Name</label>
+                <input class="form-input" [(ngModel)]="form.customization.schoolName" name="schoolName" />
+              </div>
+              <div class="form-field">
+                <label class="form-label">Exam Name</label>
+                <input class="form-input" [(ngModel)]="form.customization.examName" name="examName" />
+              </div>
+              <div class="form-field">
+                <label class="form-label">Accent Color</label>
+                <input class="form-input color-input" type="color" [(ngModel)]="form.customization.accentColor" name="accentColor" />
+              </div>
+              <div class="form-field">
+                <label class="form-label">Font Size (pt)</label>
+                <input class="form-input" type="number" [(ngModel)]="form.layout.fontSize" name="fontSize" />
+              </div>
+            </div>
+            <div class="toggle-row">
+              <label class="toggle"><input type="checkbox" [(ngModel)]="form.customization.showLogo" name="showLogo" /> Show Logo</label>
+              <label class="toggle"><input type="checkbox" [(ngModel)]="form.customization.showPhoto" name="showPhoto" /> Show Photo</label>
+              <label class="toggle"><input type="checkbox" [(ngModel)]="form.customization.showGrade" name="showGrade" /> Show Grades</label>
+              <label class="toggle"><input type="checkbox" [(ngModel)]="form.customization.showAttendance" name="showAttendance" /> Show Attendance</label>
+            </div>
+          </div>
+
+          <div class="form-field" style="margin-top: 12px;">
+            <label class="toggle"><input type="checkbox" [(ngModel)]="form.isDefault" name="isDefault" /> Set as default for this type</label>
+          </div>
+
+          <div class="form-actions">
+            <button type="button" class="btn btn-outline" (click)="closeModal()">Cancel</button>
+            <button type="submit" class="btn btn-primary" [disabled]="saving">
+              @if (saving) { <span class="spinner-sm"></span> Saving... } @else { Save Template }
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ================= DELETE MODAL ================= -->
+@if (showDeleteModal) {
+  <div class="modal-overlay" (click)="cancelDelete()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3 class="modal-title">Delete Template</h3>
+        <button class="modal-close" (click)="cancelDelete()">✕</button>
+      </div>
+      <div class="modal-body">
+        <p>Are you sure you want to delete <strong>{{ deleteTarget?.name }}</strong>? This action cannot be undone.</p>
+        <div class="form-actions">
+          <button class="btn btn-outline" (click)="cancelDelete()">Cancel</button>
+          <button class="btn btn-danger" (click)="delete()" [disabled]="deleting">
+            @if (deleting) { <span class="spinner-sm"></span> Deleting... } @else { Delete }
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ================= PREVIEW MODAL ================= -->
+@if (showPreview && previewTemplate) {
+  <div class="modal-overlay" (click)="closePreview()">
+    <div class="modal" (click)="$event.stopPropagation()" style="max-width: 800px; max-height: 90vh; overflow-y: auto;">
+      <div class="modal-header">
+        <h3 class="modal-title">{{ previewTemplate.name }} — Preview</h3>
+        <button class="modal-close" (click)="closePreview()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div style="background: #f5f5f5; padding: 20px; border-radius: 8px; min-height: 400px;">
+          <div style="background: white; padding: 40px; border: 1px solid #ddd; font-family: 'Times New Roman', serif;">
+            <div style="text-align: center; margin-bottom: 20px;">
+              <strong style="font-size: 18px; display: block;">{{ previewTemplate.customization.schoolName }}</strong>
+              <small style="color: #666;">{{ previewTemplate.customization.examName }}</small>
+            </div>
+            <hr />
+            <div style="margin: 20px 0;">
+              <strong>{{ previewTemplate.type === 'report' ? 'Student Report Card' : 'Student Admit Card' }}</strong>
+              <p style="margin: 8px 0; font-size: 12px; color: #666;">Type: {{ previewTemplate.type }}</p>
+              <p style="margin: 8px 0; font-size: 12px; color: #666;">Font Size: {{ previewTemplate.layout.fontSize }}pt</p>
+              @if (previewTemplate.customization.showLogo) {
+                <p style="margin: 4px 0; font-size: 11px; color: #999;">✓ Shows school logo</p>
+              }
+              @if (previewTemplate.customization.showPhoto) {
+                <p style="margin: 4px 0; font-size: 11px; color: #999;">✓ Shows student photo</p>
+              }
+              @if (previewTemplate.customization.showGrade) {
+                <p style="margin: 4px 0; font-size: 11px; color: #999;">✓ Shows grades</p>
+              }
+              @if (previewTemplate.customization.showAttendance) {
+                <p style="margin: 4px 0; font-size: 11px; color: #999;">✓ Shows attendance</p>
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+}

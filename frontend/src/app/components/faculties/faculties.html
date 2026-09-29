@@ -1,0 +1,191 @@
+<div class="page">
+
+  <div class="flex-between" style="margin-bottom: 6px;">
+    <div>
+      <h1 class="page-title">Faculty</h1>
+      <p class="page-subtitle">Manage staff records and profiles</p>
+    </div>
+    <button class="btn btn-primary" (click)="openAdd()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Add Faculty
+    </button>
+  </div>
+
+  @if (successMessage) { <div class="alert alert-success">{{ successMessage }}</div> }
+  @if (errorMessage) { <div class="alert alert-error">{{ errorMessage }}</div> }
+
+  <div class="filter-bar">
+    <input class="search" type="text" placeholder="Search by name, ID or email..." [(ngModel)]="searchText" (keyup.enter)="applyFilters()" />
+    <select [(ngModel)]="selectedDepartment">
+      <option value="">All Departments</option>
+      @for (d of departments; track d) { <option [value]="d">{{ d }}</option> }
+    </select>
+    <select [(ngModel)]="selectedDesignation">
+      <option value="">All Designations</option>
+      @for (dg of designations; track dg) { <option [value]="dg">{{ dg }}</option> }
+    </select>
+    <button class="btn btn-primary btn-sm" (click)="applyFilters()">Search</button>
+    <button class="btn btn-outline btn-sm" (click)="clearFilters()">Clear</button>
+  </div>
+
+  @if (loading) {
+    <div class="loader-wrap"><div class="spinner"></div></div>
+  } @else if (faculties.length > 0) {
+    <div class="card">
+      <div class="table-shell">
+                <table class="modern-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Department</th>
+              <th>Designation</th>
+              <th>Qualification</th>
+              <th>Experience</th>
+              <th style="text-align:right;">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (f of faculties; track f._id) {
+              <tr>
+                <td class="id-cell">{{ f.facultyId }}</td>
+                <td class="name-cell">{{ f.name }}</td>
+                <td>{{ f.email }}</td>
+                <td><span class="badge badge-brand">{{ f.department }}</span></td>
+                <td><span class="badge badge-neutral">{{ f.designation }}</span></td>
+                <td>{{ f.qualification }}</td>
+                <td>{{ f.experience }} yrs</td>
+                <td>
+                  <div class="row-actions gap-2">
+                    <button class="icon-btn" title="Edit" (click)="openEdit(f)">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.83 2.83 0 0 1 4 4L7.5 20.5 2 22l1.5-5.5z"/></svg>
+                      <span>Edit</span>
+                    </button>
+                    <button class="icon-btn icon-btn-danger" title="Delete" (click)="confirmDelete(f)">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                      <span>Delete</span>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <div class="pagination">
+        <span class="muted-text">Showing {{ faculties.length }} of {{ total }} faculty</span>
+        <div class="paging">
+          <button class="btn btn-outline btn-sm" [disabled]="currentPage === 1" (click)="previousPage()">‹ Prev</button>
+          <span class="muted-text">Page <strong>{{ currentPage }}</strong> of <strong>{{ totalPages }}</strong></span>
+          <button class="btn btn-outline btn-sm" [disabled]="currentPage === totalPages" (click)="nextPage()">Next ›</button>
+        </div>
+      </div>
+    </div>
+  } @else {
+    <div class="card"><div class="empty-state">
+      <span class="emoji">🧑‍🏫</span>
+      <h3>No faculty records</h3>
+      <p>Add your first faculty member to get started.</p>
+    </div></div>
+  }
+
+</div>
+<!-- ================= ADD / EDIT MODAL ================= -->
+@if (showModal) {
+  <div class="modal-overlay" (click)="closeModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3 class="modal-title">{{ editingId ? 'Edit Faculty' : 'Add Faculty' }}</h3>
+        <button class="modal-close" (click)="closeModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        @if (formError) { <div class="alert alert-error">{{ formError }}</div> }
+        <form class="form-grid-2" (ngSubmit)="save()">
+          <div class="form-field">
+            <label class="form-label">Faculty ID <span class="req">*</span></label>
+            <input class="form-input" [(ngModel)]="form.facultyId" name="facultyId" placeholder="FAC001" />
+          </div>
+          <div class="form-field">
+            <label class="form-label">Full Name <span class="req">*</span></label>
+            <input class="form-input" [(ngModel)]="form.name" name="name" placeholder="Dr. Jane Doe" />
+          </div>
+          <div class="form-field">
+            <label class="form-label">Email <span class="req">*</span></label>
+            <input class="form-input" type="email" [(ngModel)]="form.email" name="email" placeholder="jane@school.edu" />
+          </div>
+          <div class="form-field">
+            <label class="form-label">Phone <span class="req">*</span></label>
+            <input class="form-input" [(ngModel)]="form.phone" name="phone" placeholder="+91 98765 43210" />
+          </div>
+          <div class="form-field">
+            <label class="form-label">Gender</label>
+            <select class="form-select" [(ngModel)]="form.gender" name="gender">
+              <option value="">Select</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="form-field">
+            <label class="form-label">Department <span class="req">*</span></label>
+            <select class="form-select" [(ngModel)]="form.department" name="department">
+              <option value="">Select</option>
+              @for (d of departments; track d) { <option [value]="d">{{ d }}</option> }
+            </select>
+          </div>
+          <div class="form-field">
+            <label class="form-label">Designation <span class="req">*</span></label>
+            <select class="form-select" [(ngModel)]="form.designation" name="designation">
+              <option value="">Select</option>
+              @for (dg of designations; track dg) { <option [value]="dg">{{ dg }}</option> }
+            </select>
+          </div>
+          <div class="form-field">
+            <label class="form-label">Qualification <span class="req">*</span></label>
+            <input class="form-input" [(ngModel)]="form.qualification" name="qualification" placeholder="Ph.D, M.Tech..." />
+          </div>
+          <div class="form-field">
+            <label class="form-label">Experience (years)</label>
+            <input class="form-input" type="number" min="0" [(ngModel)]="form.experience" name="experience" />
+          </div>
+          <div class="form-field">
+            <label class="form-label">Joining Date</label>
+            <input class="form-input" type="date" [(ngModel)]="form.joiningDate" name="joiningDate" />
+          </div>
+          <div class="form-field" style="grid-column: span 2;">
+            <label class="form-label">Address</label>
+            <textarea class="form-textarea" rows="2" [(ngModel)]="form.address" name="address"></textarea>
+          </div>
+          <div class="form-actions" style="grid-column: span 2;">
+            <button type="button" class="btn btn-outline" (click)="closeModal()">Cancel</button>
+            <button type="submit" class="btn btn-primary" [disabled]="saving">
+              @if (saving) { <span class="spinner-sm"></span> Saving... } @else { {{ editingId ? 'Update' : 'Add Faculty' }} }
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ================= DELETE CONFIRM ================= -->
+@if (showDeleteModal && deleteTarget) {
+  <div class="modal-overlay" (click)="cancelDelete()">
+    <div class="modal" style="width: 430px;" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3 class="modal-title">Delete faculty</h3>
+        <button class="modal-close" (click)="cancelDelete()">✕</button>
+      </div>
+      <div class="modal-body">
+        <p>Delete <strong>{{ deleteTarget.name }}</strong> ({{ deleteTarget.facultyId }})? This cannot be undone.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" (click)="cancelDelete()">Cancel</button>
+        <button class="btn btn-danger" [disabled]="deleting" (click)="delete()">
+          @if (deleting) { <span class="spinner-sm"></span> Deleting... } @else { Delete }
+        </button>
+      </div>
+    </div>
+  </div>
+}

@@ -1,0 +1,157 @@
+<div class="page">
+
+  <div class="flex-between" style="margin-bottom: 6px;">
+    <div>
+      <h1 class="page-title">Students</h1>
+      <p class="page-subtitle">Manage and search student records</p>
+    </div>
+        @if (isAdmin()) {
+      <div style="display: flex; gap: 10px;">
+        <button class="btn btn-primary" (click)="goToAddStudent()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Add Student
+        </button>
+        <label class="btn btn-outline btn-sm" style="cursor: pointer; display: inline-flex; align-items: center; gap: 6px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.5"/><polyline points="17 1 12 6 15 6 19 2 23 6 23 6"/></svg>
+          Upload CSV
+          <input type="file" class="file-upload-input" accept=".csv,.xlsx" (change)="onFileSelected($event)" />
+        </label>
+        <button class="btn btn-outline btn-sm" (click)="downloadCsvTemplate()">Template</button>
+      </div>
+    }
+  </div>
+
+    @if (csvSuccess) {
+    <div class="alert alert-success">{{ csvSuccess }}</div>
+  }
+  @if (csvError) {
+    <div class="alert alert-error">{{ csvError }}</div>
+  }
+  @if (selectedFile && isAdmin()) {
+    <div style="margin-bottom: 12px; padding: 10px 14px; background: var(--brand-50); border-radius: 8px; display: flex; align-items: center; gap: 10px; max-width: 400px;">
+      <span class="muted-text" style="font-size: 13px;">📎 {{ selectedFile.name }}</span>
+      <button class="btn btn-success btn-sm" (click)="uploadCsv()" [disabled]="csvUploading">
+        @if (csvUploading) { <span class="spinner-sm"></span> Uploading... } @else { Upload }
+      </button>
+    </div>
+  }
+  @if (successMessage) {
+    <div class="alert alert-success">{{ successMessage }}</div>
+  }
+  @if (errorMessage) {
+    <div class="alert alert-error">{{ errorMessage }}</div>
+  }
+
+  <!-- ================= FILTERS ================= -->
+  <div class="filter-bar">
+    <input class="search" type="text" placeholder="Search by name, ID or email..." [(ngModel)]="searchText" (keyup.enter)="applyFilters()" />
+    <select [(ngModel)]="selectedDepartment" (ngModelChange)="onFilterChange()">
+      <option value="">All Departments</option>
+      @for (d of departments; track d) {
+        <option [value]="d">{{ d }}</option>
+      }
+    </select>
+    <select [(ngModel)]="selectedSemester" (ngModelChange)="onFilterChange()">
+      <option value="">All Semesters</option>
+      @for (s of semesters; track s) {
+        <option [value]="s">Semester {{ s }}</option>
+      }
+    </select>
+    <button class="btn btn-primary btn-sm" (click)="applyFilters()">Search</button>
+    <button class="btn btn-outline btn-sm" (click)="clearFilters()">Clear</button>
+  </div>
+
+  <!-- ================= TABLE ================= -->
+  @if (loading) {
+    <div class="loader-wrap"><div class="spinner"></div></div>
+  } @else if (students.length > 0) {
+    <div class="card">
+      <div class="table-shell">
+                <table class="modern-table">
+          <thead>
+            <tr>
+              <th>Student ID</th>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Department</th>
+              <th>Course</th>
+              <th>Semester</th>
+              <th>Admission</th>
+              <th style="text-align:right;">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (student of students; track student._id) {
+              <tr>
+                <td class="id-cell">{{ student.studentId }}</td>
+                <td class="name-cell">{{ student.name }}</td>
+                <td>{{ student.email }}</td>
+                <td><span class="badge badge-brand">{{ student.department }}</span></td>
+                <td>{{ student.course }}</td>
+                <td><span class="badge badge-neutral">{{ student.semester }}</span></td>
+                <td>{{ student.admissionYear }}</td>
+                <td>
+                  <div class="row-actions gap-2">
+                    @if (isAdmin()) {
+                      <button class="icon-btn" title="Edit" (click)="editStudent(student)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.83 2.83 0 0 1 4 4L7.5 20.5 2 22l1.5-5.5z"/></svg>
+                        <span>Edit</span>
+                      </button>
+                      <button class="icon-btn icon-btn-danger" title="Delete" (click)="confirmDelete(student)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                        <span>Delete</span>
+                      </button>
+                    }
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="pagination">
+        <span class="muted-text">Showing {{ students.length }} of {{ totalStudents }} students</span>
+        <div class="paging">
+          <button class="btn btn-outline btn-sm" [disabled]="currentPage === 1 || loading" (click)="previousPage()">‹ Prev</button>
+          <span class="muted-text">Page <strong>{{ currentPage }}</strong> of <strong>{{ totalPages }}</strong></span>
+          <button class="btn btn-outline btn-sm" [disabled]="currentPage === totalPages || loading" (click)="nextPage()">Next ›</button>
+        </div>
+      </div>
+    </div>
+  } @else {
+    <div class="card">
+      <div class="empty-state">
+        <span class="emoji">👨‍🎓</span>
+        <h3>No students found</h3>
+        <p>Try changing your search or filter options.</p>
+      </div>
+    </div>
+  }
+
+</div>
+
+<!-- ================= DELETE CONFIRM MODAL ================= -->
+@if (showDeleteModal && deleteTarget) {
+  <div class="modal-overlay" (click)="cancelDelete()">
+    <div class="modal" style="width: 430px;" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3 class="modal-title">Delete student</h3>
+        <button class="modal-close" (click)="cancelDelete()">✕</button>
+      </div>
+      <div class="modal-body">
+        <p>
+          Are you sure you want to delete
+          <strong>{{ deleteTarget.name }}</strong>
+          ({{ deleteTarget.studentId }})? This action cannot be undone.
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" (click)="cancelDelete()">Cancel</button>
+        <button class="btn btn-danger" [disabled]="deleting" (click)="deleteStudent()">
+          @if (deleting) { <span class="spinner-sm"></span> Deleting... } @else { Delete }
+        </button>
+      </div>
+    </div>
+  </div>
+}

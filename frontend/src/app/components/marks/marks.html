@@ -1,0 +1,155 @@
+<div class="page">
+
+  <div class="flex-between" style="margin-bottom: 6px;">
+    <div>
+      <h1 class="page-title">Marks</h1>
+      <p class="page-subtitle">Record and manage student marks</p>
+    </div>
+    <button class="btn btn-primary" (click)="openAdd()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Add Marks
+    </button>
+  </div>
+
+  @if (successMessage) { <div class="alert alert-success">{{ successMessage }}</div> }
+  @if (errorMessage) { <div class="alert alert-error">{{ errorMessage }}</div> }
+
+  <div class="filter-bar">
+    <select [(ngModel)]="selectedResult" (ngModelChange)="applyFilters()">
+      <option value="">All Results</option>
+      <option value="Pass">Pass</option>
+      <option value="Fail">Fail</option>
+    </select>
+    <button class="btn btn-outline btn-sm" (click)="clearFilters()">Reset</button>
+  </div>
+
+  @if (loading) {
+    <div class="loader-wrap"><div class="spinner"></div></div>
+  } @else if (rows.length > 0) {
+    <div class="card">
+      <div class="table-shell">
+                <table class="modern-table">
+          <thead>
+            <tr>
+              <th>Student</th>
+              <th>Subject</th>
+              <th>Faculty</th>
+              <th>Internal</th>
+              <th>External</th>
+              <th>Total</th>
+              <th>Grade</th>
+              <th>Result</th>
+              <th style="text-align:right;">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (m of rows; track m._id) {
+              <tr>
+                <td>
+                  <div class="name-cell">{{ m.student?.name }}</div>
+                  <div class="muted-text">{{ m.student?.studentId }}</div>
+                </td>
+                <td>
+                  <div class="name-cell">{{ m.subject?.subjectName }}</div>
+                  <div class="muted-text">{{ m.subject?.subjectCode }}</div>
+                </td>
+                <td>{{ m.faculty?.name || '—' }}</td>
+                <td>{{ m.internalMarks }}</td>
+                <td>{{ m.externalMarks }}</td>
+                <td class="id-cell">{{ totalOf(m) }}</td>
+                <td><span class="badge {{ gradeBadge(m.grade) }}">{{ m.grade }}</span></td>
+                <td><span class="badge {{ resultBadge(m.result) }}">{{ m.result }}</span></td>
+                <td>
+                  <div class="row-actions gap-2">
+                    <button class="icon-btn" title="Edit" (click)="openEdit(m)">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.83 2.83 0 0 1 4 4L7.5 20.5 2 22l1.5-5.5z"/></svg>
+                    </button>
+                    <button class="icon-btn icon-btn-danger" title="Delete" (click)="deleteRow(m)">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <div class="pagination">
+        <span class="muted-text">Showing {{ rows.length }} of {{ total }} entries</span>
+        <div class="paging">
+          <button class="btn btn-outline btn-sm" [disabled]="currentPage === 1" (click)="previousPage()">‹ Prev</button>
+          <span class="muted-text">Page <strong>{{ currentPage }}</strong> of <strong>{{ totalPages }}</strong></span>
+          <button class="btn btn-outline btn-sm" [disabled]="currentPage === totalPages" (click)="nextPage()">Next ›</button>
+        </div>
+      </div>
+    </div>
+  } @else {
+    <div class="card"><div class="empty-state">
+      <span class="emoji">📝</span>
+      <h3>No marks recorded yet</h3>
+      <p>Click "Add Marks" to enter marks for a student.</p>
+    </div></div>
+  }
+
+</div>
+<!-- ================= ADD / EDIT MARKS MODAL ================= -->
+@if (showModal) {
+  <div class="modal-overlay" (click)="closeModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3 class="modal-title">{{ editingId ? 'Edit Marks' : 'Add Marks' }}</h3>
+        <button class="modal-close" (click)="closeModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        @if (formError) { <div class="alert alert-error">{{ formError }}</div> }
+        <form class="form-grid-2" (ngSubmit)="save()">
+          <div class="form-field" style="grid-column: span 2;">
+            <label class="form-label">Student <span class="req">*</span></label>
+            <select class="form-select" [(ngModel)]="form.student" name="student">
+              <option value="">Select student</option>
+              @for (s of students; track s._id) {
+                <option [value]="s._id">{{ s.studentId }} — {{ s.name }}</option>
+              }
+            </select>
+          </div>
+          <div class="form-field" style="grid-column: span 2;">
+            <label class="form-label">Subject <span class="req">*</span></label>
+            <select class="form-select" [(ngModel)]="form.subject" name="subject">
+              <option value="">Select subject</option>
+              @for (sub of subjects; track sub._id) {
+                <option [value]="sub._id">{{ sub.subjectCode }} — {{ sub.subjectName }}</option>
+              }
+            </select>
+          </div>
+          <div class="form-field" style="grid-column: span 2;">
+            <label class="form-label">Faculty <span class="req">*</span></label>
+            <select class="form-select" [(ngModel)]="form.faculty" name="faculty">
+              <option value="">Select faculty</option>
+              @for (f of faculties; track f._id) {
+                <option [value]="f._id">{{ f.name }}</option>
+              }
+            </select>
+          </div>
+          <div class="form-field">
+            <label class="form-label">Internal (0-40) <span class="req">*</span></label>
+            <input class="form-input" type="number" min="0" max="40" [(ngModel)]="form.internalMarks" name="internalMarks" />
+          </div>
+          <div class="form-field">
+            <label class="form-label">External (0-60) <span class="req">*</span></label>
+            <input class="form-input" type="number" min="0" max="60" [(ngModel)]="form.externalMarks" name="externalMarks" />
+          </div>
+          <div class="form-field" style="grid-column: span 2;">
+            <label class="form-label">Remarks</label>
+            <input class="form-input" [(ngModel)]="form.remarks" name="remarks" placeholder="Optional note" />
+          </div>
+          <div class="form-actions" style="grid-column: span 2;">
+            <button type="button" class="btn btn-outline" (click)="closeModal()">Cancel</button>
+            <button type="submit" class="btn btn-primary" [disabled]="saving">
+              @if (saving) { <span class="spinner-sm"></span> Saving... } @else { {{ editingId ? 'Update' : 'Add Marks' }} }
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+}

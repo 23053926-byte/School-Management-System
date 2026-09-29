@@ -1,0 +1,66 @@
+<div class="page" style="padding-top: 28px;">
+
+  <div class="hero">
+    <div>
+      <h1 class="page-title">Welcome, {{ userName }} 🍎</h1>
+      <p class="page-subtitle">
+        {{ today | date: 'EEEE, MMMM d, y' }} · Manage your teaching workload from here.
+      </p>
+    </div>
+    <div class="hero-badge">
+      <span class="badge badge-brand">Faculty</span>
+    </div>
+  </div>
+
+  <div class="stat-grid" style="margin-top: 22px;">
+    <div class="stat-card">
+      <div class="stat-icon" style="background: #6366f1;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><path d="M16 5a3.5 3.5 0 0 1 0 7"/><path d="M17.5 14.5c2.3.7 4 2.6 4 5.5"/></svg>
+      </div>
+      <div>
+        @if (totalStudents === null) { <p class="stat-value"><span class="spinner-sm"></span></p> }
+        @else { <p class="stat-value">{{ totalStudents }}</p> }
+        <p class="stat-label">Students</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon" style="background: #8b5cf6;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5v14z"/><path d="M20 17v4H6.5A2.5 2.5 0 0 1 4 18.5"/></svg>
+      </div>
+      <div>
+        @if (totalSubjects === null) { <p class="stat-value"><span class="spinner-sm"></span></p> }
+        @else { <p class="stat-value">{{ totalSubjects }}</p> }
+        <p class="stat-label">Subjects</p>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon" style="background: #10b981;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+      </div>
+      <div>
+        @if (totalAttendance === null) { <p class="stat-value"><span class="spinner-sm"></span></p> }
+        @else { <p class="stat-value">{{ totalAttendance }}</p> }
+        <p class="stat-label">Attendance Records</p>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="section-title" style="margin: 30px 0 16px;">My tools</h2>
+  <div class="actions-grid">
+    @for (action of actions; track action.route) {
+      <div class="action-card" (click)="goTo(action.route)">
+        <div class="action-icon" [style.background]="action.color">
+          @switch (action.icon) {
+            @case ('users') { <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><path d="M16 5a3.5 3.5 0 0 1 0 7"/></svg> }
+            @case ('calendar') { <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg> }
+            @case ('clipboard') { <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="5" y="4" width="14" height="18" rx="2"/><path d="M9 4a3 3 0 0 1 6 0"/><path d="M9 11l2 2 4-4"/></svg> }
+            @case ('award') { <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="9" r="6"/><path d="M8.5 14.5 7 22l5-3 5 3-1.5-7.5"/></svg> }
+          }
+        </div>
+        <h3>{{ action.label }}</h3>
+        <p>{{ action.description }}</p>
+      </div>
+    }
+  </div>
+
+</div>

@@ -1,0 +1,126 @@
+<div class="page">
+
+  <div>
+    <h1 class="page-title">Results</h1>
+    <p class="page-subtitle">View student performance, percentage and grades</p>
+  </div>
+
+  <div class="filter-bar mt-2">
+    <label class="muted-text" style="min-width: 110px;">Select student:</label>
+    <select class="form-select" style="max-width: 360px;" [(ngModel)]="selectedStudentId" (ngModelChange)="onStudentChange()">
+      <option value="">— Choose a student —</option>
+      @for (s of students; track s._id) {
+        <option [value]="s._id">{{ s.studentId }} — {{ s.name }}</option>
+      }
+    </select>
+    <label class="muted-text" style="min-width: 110px; margin-left: 20px;">Semester:</label>
+    <select class="form-select" style="max-width: 200px;" [(ngModel)]="selectedSemester" (ngModelChange)="onSemesterChange()">
+      <option value="">All Semesters</option>
+      @for (sem of semesters; track sem) {
+        <option [value]="sem">{{ sem }}</option>
+      }
+    </select>
+  </div>
+
+  @if (errorMessage) { <div class="alert alert-error">{{ errorMessage }}</div> }
+
+  @if (loadingResult) {
+    <div class="loader-wrap"><div class="spinner"></div></div>
+  }
+
+  @if (result && !loadingResult) {
+
+    <!-- ================= SUMMARY CARDS ================= -->
+    <div class="stat-grid mt-4 mb-4">
+      <div class="stat-card">
+        <div class="stat-icon" style="background:#6366f1;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="5"/><path d="M5 22a8.5 8.5 0 0 1 10 8"/></svg>
+        </div>
+        <div>
+          <p class="stat-value">{{ result.subjects }}</p>
+          <p class="stat-label">Subjects</p>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon" style="background:#10b981;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        </div>
+        <div>
+          <p class="stat-value">{{ percentageLabel() }}</p>
+          <p class="stat-label">Percentage</p>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon" style="background:#f59e0b;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 15.5 9.5 23 10.4 17.5 15.8 18.8 23 12 19.3 5.2 23 6.5 15.8 1 10.4 8.5 9.5z"/></svg>
+        </div>
+        <div>
+          <p class="stat-value">{{ result.sgpa ?? '—' }}</p>
+          <p class="stat-label">SGPA</p>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon" style="background:#8b5cf6;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 15.5 9.5 23 10.4 17.5 15.8 18.8 23 12 19.3 5.2 23 6.5 15.8 1 10.4 8.5 9.5z"/></svg>
+        </div>
+        <div>
+          <span class="badge {{ resultBadge() }}" style="font-size:16px; padding:6px 14px;">{{ result.overallResult }}</span>
+          <p class="stat-label" style="margin-top:8px;">Overall Result</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= SUBJECT TABLE ================= -->
+    <div class="card">
+      <div class="table-shell">
+        <table class="solid-table">
+          <thead>
+            <tr>
+              <th>Subject</th>
+              <th>Credits</th>
+              <th>Internal</th>
+              <th>External</th>
+              <th>Total</th>
+              <th>Grade</th>
+              <th>Result</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (sub of subjects; track $index) {
+              <tr>
+                <td class="name-cell">{{ sub.subjectName }} <span class="muted-text">({{ sub.subjectCode }})</span></td>
+                <td>{{ sub.credits }}</td>
+                <td>{{ sub.internalMarks }}</td>
+                <td>{{ sub.externalMarks }}</td>
+                <td class="id-cell">{{ sub.totalMarks }}</td>
+                <td><span class="badge {{ gradeBadge(sub.grade) }}">{{ sub.grade }}</span></td>
+                <td><span class="badge {{ subjectResultBadge(sub.result) }}">{{ sub.result }}</span></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      <div class="pagination">
+        <span class="muted-text">
+          Passed {{ result.passedSubjects }} · Failed {{ result.failedSubjects }} · Total marks {{ result.totalMarks }}/{{ result.totalMaximumMarks }}
+        </span>
+      </div>
+    </div>
+
+  } @else if (hasLoaded && !loadingResult && !errorMessage) {
+    <div class="card"><div class="empty-state">
+      <span class="emoji">🎓</span>
+      <h3>Select a student to view results</h3>
+    </div></div>
+  } @else if (!hasLoaded && !loadingResult) {
+    <div class="card"><div class="empty-state">
+      <span class="emoji">🎓</span>
+      <h3>Choose a student from the list above</h3>
+      <p>Their result summary and grade card will appear here.</p>
+    </div></div>
+  }
+
+</div>

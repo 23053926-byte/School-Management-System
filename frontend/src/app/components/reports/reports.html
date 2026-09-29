@@ -1,0 +1,203 @@
+﻿<div class="page">
+
+  <div class="flex-between">
+    <div>
+      <h1 class="page-title">Reports & Admit Cards</h1>
+      <p class="page-subtitle">Generate printable report cards and admit cards with custom templates</p>
+    </div>
+    <button class="btn btn-primary" (click)="printDocument()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+      Print / Save PDF
+    </button>
+  </div>
+
+  @if (errorMessage) { <div class="alert alert-error">{{ errorMessage }}</div> }
+
+  <!-- ============ CONTROLS ============ -->
+  <div class="card card-pad print-hide" style="margin-top: 16px;">
+
+    <div class="mode-tabs">
+      <button type="button" class="mode-tab" [class.active]="mode === 'report'" (click)="setMode('report')">📄 Report Card</button>
+      <button type="button" class="mode-tab" [class.active]="mode === 'admit'" (click)="setMode('admit')">🎫 Admit Card</button>
+    </div>
+
+    <!-- ============ CUSTOM TEMPLATES ============ -->
+    <div style="margin-top: 16px; padding: 12px; background: #f5f5f5; border-radius: 6px;">
+      <label class="toggle" style="margin-bottom: 12px;">
+        <input type="checkbox" [(ngModel)]="useCustomTemplate" (ngModelChange)="applyCustomTemplate()" />
+        Use saved custom template
+      </label>
+      @if (useCustomTemplate) {
+        <div class="form-field">
+          <label class="form-label">Select template</label>
+          @if (loadingTemplates) {
+            <p class="muted-text" style="font-size: 12px;">Loading templates...</p>
+          } @else if (customTemplates.length > 0) {
+            <select class="form-select" [(ngModel)]="selectedTemplate" (ngModelChange)="applyCustomTemplate()">
+              <option value="">Choose a saved template</option>
+              @for (t of customTemplates; track t._id) {
+                <option [value]="t._id">{{ t.name }}</option>
+              }
+            </select>
+          } @else {
+            <p class="muted-text" style="font-size: 12px;">No custom templates yet. Go to Templates section to create one.</p>
+          }
+        </div>
+      }
+    </div>
+
+    <label class="form-label" style="margin-top: 16px;">Choose a built-in template</label>
+    <div class="template-selector">
+      @for (t of templatesFor(mode); track t.id) {
+        <div class="template-option" [class.selected]="selectedTemplate === t.id && !useCustomTemplate" (click)="useTemplate(t.id)">
+          <div class="template-icon">{{ t.icon }}</div>
+          <div class="template-name">{{ t.name }}</div>
+          <div class="template-desc">{{ t.desc }}</div>
+        </div>
+      }
+    </div>
+
+    <div class="form-grid-3">
+      <div class="form-field">
+        <label class="form-label">Student <span class="req">*</span></label>
+        <select class="form-select" [(ngModel)]="selectedStudent" (ngModelChange)="onStudentChange()">
+          <option value="">Select student</option>
+          @for (s of students; track s._id) {
+            <option [value]="s._id">{{ s.studentId }} — {{ s.name }}</option>
+          }
+        </select>
+      </div>
+      <div class="form-field">
+        <label class="form-label">Semester</label>
+        <select class="form-select" [(ngModel)]="selectedSemester" (ngModelChange)="onSemesterChange()">
+          <option value="">All Semesters</option>
+          @for (sem of semesters; track sem) {
+            <option [value]="sem">{{ sem }}</option>
+          }
+        </select>
+      </div>
+      <div class="form-field">
+        <label class="form-label">School / Institute name</label>
+        <input class="form-input" [(ngModel)]="customization.schoolName" name="schoolName" />
+      </div>
+      <div class="form-field">
+        <label class="form-label">Exam name</label>
+        <input class="form-input" [(ngModel)]="customization.examName" name="examName" />
+      </div>
+      <div class="form-field">
+        <label class="form-label">Accent color</label>
+        <input class="form-input color-input" type="color" [(ngModel)]="customization.accentColor" name="accentColor" />
+      </div>
+      <div class="form-field">
+        <label class="form-label">Signature label</label>
+        <input class="form-input" [(ngModel)]="customization.principalSignature" name="principalSignature" />
+      </div>
+      <div class="form-field toggles-field">
+        <label class="form-label">Show elements</label>
+        <div class="toggle-row">
+          <label class="toggle"><input type="checkbox" [(ngModel)]="customization.showLogo" name="showLogo" /> Logo</label>
+          <label class="toggle"><input type="checkbox" [(ngModel)]="customization.showPhoto" name="showPhoto" /> Photo</label>
+          <label class="toggle"><input type="checkbox" [(ngModel)]="customization.showGrade" name="showGrade" /> Grades</label>
+          <label class="toggle"><input type="checkbox" [(ngModel)]="customization.showAttendance" name="showAttendance" /> Attendance</label>
+        </div>
+      </div>
+    </div>
+    <button class="btn btn-outline btn-sm" style="margin-top: 10px;" (click)="resetCustomization()">Reset customization</button>
+  </div>
+
+  <!-- ================= REPORT PREVIEW ================= -->
+  @if (selectedStudent && summary) {
+    <div class="report-preview">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
+        <div>
+          <div class="preview-title">{{ customization.schoolName }}</div>
+          <div class="preview-subtitle">{{ customization.schoolAddress }}</div>
+        </div>
+        @if (customization.showLogo) {
+          <div style="width: 60px; height: 60px; background: var(--brand); border-radius: 50%; display: grid; place-items: center; color: #fff; font-weight: 800; font-size: 22px;">
+            {{ customization.schoolName.charAt(0) }}
+          </div>
+        }
+      </div>
+
+      <h3 style="text-align: center; margin: 18px 0 14px; font-size: 16px; text-transform: uppercase; letter-spacing: 1px; color: var(--brand);">
+        {{ mode === 'report' ? 'Student Report Card' : 'Student Admit Card' }}
+      </h3>
+
+      <div style="display: flex; gap: 20px; margin-bottom: 16px;">
+        <div style="flex: 1;">
+          <div style="font-size: 12px; color: var(--muted);">Student Name</div>
+          <div style="font-weight: 600;">{{ resultData?.name }}</div>
+        </div>
+        <div style="flex: 1;">
+          <div style="font-size: 12px; color: var(--muted);">Student ID</div>
+          <div style="font-weight: 600;">{{ resultData?.studentId }}</div>
+        </div>
+        <div style="flex: 1;">
+          <div style="font-size: 12px; color: var(--muted);">Department</div>
+          <div style="font-weight: 600;">{{ resultData?.department }}</div>
+        </div>
+        <div style="flex: 1;">
+          <div style="font-size: 12px; color: var(--muted);">Semester</div>
+          <div style="font-weight: 600;">{{ resultData?.semester }}</div>
+        </div>
+      </div>
+
+      @if (customization.showAttendance) {
+        <div style="margin-bottom: 14px; padding: 10px 14px; background: var(--success-bg); border-radius: 8px; font-size: 13px;">
+          <strong>Attendance:</strong> {{ summary.attendancePercentage || 'N/A' }}%
+        </div>
+      }
+
+      @if (customization.showGrade && subjects.length) {
+        <table class="solid-table" style="margin-bottom: 14px;">
+          <thead>
+            <tr>
+              <th>Subject</th>
+              <th>Internal</th>
+              <th>External</th>
+              <th>Total</th>
+              <th>Grade</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (sub of subjects; track sub.subjectName) {
+              <tr>
+                <td>{{ sub.subjectName }}</td>
+                <td>{{ sub.internalMarks }}</td>
+                <td>{{ sub.externalMarks }}</td>
+                <td>{{ percentOf(sub) }}</td>
+                <td>
+                  <span class="badge {{ gradeBadge(sub.grade) }}">{{ sub.grade }}</span>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+
+      <div style="display: flex; justify-content: space-between; padding-top: 14px; border-top: 1px solid var(--border);">
+        <div>
+          <div style="font-size: 12px; color: var(--muted);">SGPA</div>
+          <div style="font-weight: 700; font-size: 20px; color: var(--brand);">{{ sgpa }}</div>
+        </div>
+        <div style="text-align: right;">
+          <div style="font-size: 12px; color: var(--muted);">Overall Percentage</div>
+          <div style="font-weight: 700; font-size: 16px;">
+            {{ percentage }}
+          </div>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- Print button -->
+  @if (selectedStudent) {
+    <div class="report-actions">
+      <button class="btn btn-primary" (click)="printDocument()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        Print / Save PDF
+      </button>
+    </div>
+  }
+</div>
