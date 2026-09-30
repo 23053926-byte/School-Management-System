@@ -32,7 +32,8 @@ export class AuthService {
 
   private apiUrl = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
     ? 'http://localhost:5000/api/auth'
-    : 'https://school-management-system-vafo.onrender.com';
+    : 'https://school-management-system-vafo.onrender.com/api/auth';
+    
 
 
   login(
