@@ -121,8 +121,8 @@ const login = async (req, res) => {
           success: false,
           message: "Multiple organizations found for this account. Please specify organizationId.",
           organizations: validUsers.map(u => ({
-            organizationId: u.organizationId._id,
-            organizationName: u.organizationId.name
+            organizationId: u.organizationId?._id || u.organizationId,
+            organizationName: u.organizationId?.name || "Default School"
           }))
         });
       }
@@ -143,12 +143,16 @@ const login = async (req, res) => {
       }
     }
 
+    // Extract organization ID safely
+    const orgId = user.organizationId?._id || user.organizationId || null;
+    const orgName = user.organizationId?.name || "Default School";
+
     // Generate JWT including organizationId
     const token = jwt.sign(
       {
         id: user._id,
         role: user.role,
-        organizationId: user.organizationId._id || user.organizationId
+        organizationId: orgId
       },
       process.env.JWT_SECRET,
       {
@@ -162,8 +166,8 @@ const login = async (req, res) => {
       token,
       user: {
         id: user._id,
-        organizationId: user.organizationId._id || user.organizationId,
-        organizationName: user.organizationId.name,
+        organizationId: orgId,
+        organizationName: orgName,
         name: user.name,
         email: user.email,
         role: user.role

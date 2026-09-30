@@ -14,6 +14,7 @@ require("dotenv").config();
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 
+const Organization = require("./models/Organization");
 const User = require("./models/User");
 const Student = require("./models/Student");
 const Faculty = require("./models/Faculty");
@@ -27,6 +28,22 @@ if (!MONGO_URI) {
   console.error("MONGO_URI not found in .env — cannot connect.");
   process.exit(1);
 }
+
+const DEFAULT_ORG = {
+  name: "Global Heights Academy",
+  address: "123 Education Street",
+  city: "Tech City",
+  state: "State",
+  pincode: "100001",
+  contactEmail: "contact@globalheights.edu",
+  contactPhone: "1234567890",
+  academicYear: "2025-2026",
+  principal: {
+    name: "Dr. Alexander Smith",
+    email: "principal@globalheights.edu",
+    phone: "1234567891"
+  }
+};
 
 const DEFAULT_USERS = [
   {
@@ -52,16 +69,38 @@ async function syncIndexes() {
   }
 }
 
-async function seedUsers() {
+async function getOrCreateDefaultOrganization() {
+  console.log("Checking default organization...");
+  let org = await Organization.findOne({ name: DEFAULT_ORG.name, academicYear: DEFAULT_ORG.academicYear });
+  if (!org) {
+    org = await Organization.findOne();
+  }
+  if (!org) {
+    org = await Organization.create(DEFAULT_ORG);
+    console.log(`  ✓ Created default organization: ${org.name}`);
+  } else {
+    console.log(`  • Default organization found: ${org.name} (${org._id})`);
+  }
+  return org;
+}
+
+async function seedUsers(orgId) {
   console.log("Seeding default users...");
   for (const u of DEFAULT_USERS) {
     const existing = await User.findOne({ email: u.email });
     if (existing) {
-      console.log(`  • ${u.email} already exists (skipped)`);
+      if (!existing.organizationId) {
+        existing.organizationId = orgId;
+        await existing.save();
+        console.log(`  ✓ Updated existing user ${u.email} with organizationId`);
+      } else {
+        console.log(`  • ${u.email} already exists (skipped)`);
+      }
       continue;
     }
     const hashedPassword = await bcrypt.hash(u.password, 10);
     await User.create({
+      organizationId: orgId,
       name: u.name,
       email: u.email,
       password: hashedPassword,
@@ -77,7 +116,8 @@ async function run() {
     console.log("MongoDB connected.");
 
     await syncIndexes();
-    await seedUsers();
+    const defaultOrg = await getOrCreateDefaultOrganization();
+    await seedUsers(defaultOrg._id);
 
     console.log("\nDone! Login credentials:");
     console.log("  Admin  → admin@school.edu / admin123");

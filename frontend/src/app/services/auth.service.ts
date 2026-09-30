@@ -30,7 +30,9 @@ export class AuthService {
 
   private http = inject(HttpClient);
 
-  private apiUrl = 'http://localhost:5000/api/auth';
+  private apiUrl = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    ? 'http://localhost:5000/api/auth'
+    : 'https://school-management-system-yafo.onrender.com/api/auth';
 
 
   login(

@@ -312,7 +312,7 @@
             </div>
           } @else if (student.profilePicture) {
             <div class="photo-preview-container">
-              <img [src]="'http://localhost:5000/uploads/' + student.profilePicture"
+              <img [src]="student.profilePicture.startsWith('http') ? student.profilePicture : 'http://localhost:5000/uploads/' + student.profilePicture"
                    alt="Current profile"
                    class="photo-preview"
                    (error)="student.profilePicture = ''" />
